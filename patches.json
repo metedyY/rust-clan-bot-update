@@ -1,0 +1,20 @@
+{
+  "version": "2026.08.15-1",
+  "replacements": [
+    {
+      "file": "ticket_system.py",
+      "old": "Savaşçı / İnşaatçı / Farmcı / Her rol",
+      "new": "Roamer / Builder / Farmer"
+    },
+    {
+      "file": "ticket_system.py",
+      "old": "• Ana rol (Savaşçı / İnşaatçı / Farmcı vb.)",
+      "new": "• Ana rol (Roamer / Builder / Farmer vb.)"
+    },
+    {
+      "file": "ticket_system.py",
+      "old": "Roamer / Builder / Farmer / All Rounder",
+      "new": "Roamer / Builder / Farmer"
+    }
+  ]
+}
