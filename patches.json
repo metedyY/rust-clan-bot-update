@@ -1,5 +1,5 @@
 {
-  "version": "2026.08.15-1",
+  "version": "2026.08.15-2",
   "replacements": [
     {
       "file": "ticket_system.py",
@@ -15,6 +15,17 @@
       "file": "ticket_system.py",
       "old": "Roamer / Builder / Farmer / All Rounder",
       "new": "Roamer / Builder / Farmer"
+    },
+    {
+      "file": "bot.py",
+      "old": "        intents = discord.Intents.default()\n        super().__init__(command_prefix=\"!\", intents=intents)",
+      "new": "        intents = discord.Intents.default()\n        intents.members = True\n        super().__init__(command_prefix=\"!\", intents=intents)"
+    },
+    {
+      "file": "bot.py",
+      "guard": "async def kadro(interaction: discord.Interaction) -> None:",
+      "old": "@bot.tree.command(name=\"rust-plan\", description=\"Rust şablonunun oluşturacağı yapıyı gösterir.\")",
+      "new": "@bot.tree.command(name=\"kadro\", description=\"Arctic klan kadrosunu rollere göre gösterir.\")\n@app_commands.guild_only()\nasync def kadro(interaction: discord.Interaction) -> None:\n    guild = interaction.guild\n    if guild is None:\n        await interaction.response.send_message(\"Bu komut sadece sunucuda kullanılabilir.\", ephemeral=True)\n        return\n\n    if not guild.chunked:\n        try:\n            await guild.chunk(cache=True)\n        except (discord.ClientException, discord.HTTPException):\n            pass\n\n    role_sections = [\n        (\"🎯 Roamer\", \"Roamer\"),\n        (\"🏗️ Builder\", \"Builder\"),\n        (\"⛏️ Farmer\", \"Farmer\"),\n    ]\n\n    embed = discord.Embed(\n        title=\"Arctic Klan Kadrosu\",\n        description=\"Kadro, Discord'da verilen rollere göre otomatik güncellenir.\",\n        colour=discord.Colour.blue(),\n    )\n\n    unique_members: set[int] = set()\n    for role_name, label in role_sections:\n        role = find_role(guild, role_name)\n        members = [] if role is None else sorted(\n            (member for member in role.members if not member.bot),\n            key=lambda member: member.display_name.casefold(),\n        )\n        unique_members.update(member.id for member in members)\n\n        if members:\n            value = \"\\n\".join(f\"• {member.mention}\" for member in members)\n            if len(value) > 1000:\n                value = value[:997] + \"...\"\n        else:\n            value = \"Henüz kimse yok.\"\n\n        embed.add_field(\n            name=f\"{label} — {len(members)}\",\n            value=value,\n            inline=False,\n        )\n\n    embed.set_footer(text=f\"Toplam kadro: {len(unique_members)} kişi\")\n    await interaction.response.send_message(embed=embed)\n\n\n@bot.tree.command(name=\"rust-plan\", description=\"Rust şablonunun oluşturacağı yapıyı gösterir.\")"
     }
   ]
 }
