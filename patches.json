@@ -1,5 +1,5 @@
 {
-  "version": "2026.08.15-3",
+  "version": "2026.08.15-4",
   "replacements": [
     {
       "file": "ticket_system.py",
@@ -38,6 +38,17 @@
       "guard": "await register_wipe_system(self)",
       "old": "        self.add_view(ApplicationPanelView())\n        self.add_view(TicketManagementView())\n\n        if DEV_GUILD_ID:",
       "new": "        self.add_view(ApplicationPanelView())\n        self.add_view(TicketManagementView())\n        await register_wipe_system(self)\n\n        if DEV_GUILD_ID:"
+    },
+    {
+      "file": "wipe_monitor.py",
+      "old": "from zoneinfo import ZoneInfo\n",
+      "new": ""
+    },
+    {
+      "file": "wipe_monitor.py",
+      "guard": "tz_name = match.group(4).upper()",
+      "old": "    berlin = ZoneInfo(\"Europe/Berlin\")\n    local_now = now_utc.astimezone(berlin)\n\n    pattern = re.compile(\n        r\"(Survivors\\.gg(?:(?!Survivors\\.gg|FULLWIPE|MAP\\s+WIPE).){0,100}?)\\s+\"\n        r\"(FULLWIPE|MAP\\s+WIPE)\\s+(?:WIPED\\s*[✓✔]?\\s*)?\"\n        r\"(\\d{1,2}:\\d{2})\\s*(CEST|CET)\",\n        flags=re.I,\n    )\n\n    events: list[dict[str, Any]] = []\n    for match in pattern.finditer(section):\n        server_name = \" \".join(match.group(1).split()).strip(\" -|•\")\n        wipe_type = \" \".join(match.group(2).upper().split())\n        hour, minute = map(int, match.group(3).split(\":\"))\n\n        if re.search(r\"\\bmain\\b\", server_name, flags=re.I):\n            continue\n\n        event_local = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)",
+      "new": "    pattern = re.compile(\n        r\"(Survivors\\.gg(?:(?!Survivors\\.gg|FULLWIPE|MAP\\s+WIPE).){0,100}?)\\s+\"\n        r\"(FULLWIPE|MAP\\s+WIPE)\\s+(?:WIPED\\s*[✓✔]?\\s*)?\"\n        r\"(\\d{1,2}:\\d{2})\\s*(CEST|CET)\",\n        flags=re.I,\n    )\n\n    events: list[dict[str, Any]] = []\n    for match in pattern.finditer(section):\n        server_name = \" \".join(match.group(1).split()).strip(\" -|•\")\n        wipe_type = \" \".join(match.group(2).upper().split())\n        hour, minute = map(int, match.group(3).split(\":\"))\n        tz_name = match.group(4).upper()\n        local_tz = timezone(timedelta(hours=2 if tz_name == \"CEST\" else 1))\n        local_now = now_utc.astimezone(local_tz)\n\n        if re.search(r\"\\bmain\\b\", server_name, flags=re.I):\n            continue\n\n        event_local = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)"
     }
   ]
 }
