@@ -1,72 +1,67 @@
 {
-  "version": "2026.08.15-5",
+  "version": "2026.08.16-1",
   "replacements": [
     {
+      "file": "server_template.py",
+      "old": "    {\n        \"name\": \"👤 Üye\",\n        \"colour\": 0x95A5A6,\n        \"hoist\": False,\n        \"mentionable\": False,\n        \"permissions\": {},\n    },",
+      "new": "    {\n        \"name\": \"⚡ ARC MAIN KADRO\",\n        \"colour\": 0x6EA8FE,\n        \"hoist\": True,\n        \"mentionable\": False,\n        \"permissions\": {},\n    },"
+    },
+    {
+      "file": "server_template.py",
+      "old": "    {\n        \"name\": \"🌐 Guest\",\n        \"colour\": 0x546E7A,\n        \"hoist\": False,\n        \"mentionable\": False,\n        \"permissions\": {},\n    },",
+      "new": "    {\n        \"name\": \"👋 Misafir\",\n        \"colour\": 0x95A5A6,\n        \"hoist\": False,\n        \"mentionable\": False,\n        \"permissions\": {},\n    },"
+    },
+    {
+      "file": "server_template.py",
+      "old": "        \"name\": \"🏗️ Builder\",\n        \"colour\": 0x1ABC9C,\n        \"hoist\": False,\n        \"mentionable\": True,",
+      "new": "        \"name\": \"🏗️ Builder\",\n        \"colour\": 0x000000,\n        \"hoist\": False,\n        \"mentionable\": False,"
+    },
+    {
+      "file": "server_template.py",
+      "old": "        \"name\": \"⛏️ Farmer\",\n        \"colour\": 0x2ECC71,\n        \"hoist\": False,\n        \"mentionable\": True,",
+      "new": "        \"name\": \"⛏️ Farmer\",\n        \"colour\": 0x000000,\n        \"hoist\": False,\n        \"mentionable\": False,"
+    },
+    {
+      "file": "server_template.py",
+      "old": "        \"name\": \"🎯 Roamer\",\n        \"colour\": 0xE91E63,\n        \"hoist\": False,\n        \"mentionable\": True,",
+      "new": "        \"name\": \"🎯 Roamer\",\n        \"colour\": 0x000000,\n        \"hoist\": False,\n        \"mentionable\": False,"
+    },
+    {
+      "file": "server_template.py",
+      "old": "👤 Üye",
+      "new": "⚡ ARC MAIN KADRO"
+    },
+    {
+      "file": "server_template.py",
+      "old": "🌐 Guest",
+      "new": "👋 Misafir"
+    },
+    {
+      "file": "server_template.py",
+      "old": "        \"name\": \"━━ 🌍・GENEL ALAN ━━\",\n        \"access\": \"clan\",",
+      "new": "        \"name\": \"━━ 🌍・GENEL ALAN ━━\",\n        \"access\": \"general\","
+    },
+    {
+      "file": "bot.py",
+      "guard": "allowed_names = [*CLAN_ROLE_NAMES, \"👋 Misafir\"]",
+      "old": "    allowed_names = CLAN_ROLE_NAMES if access == \"clan\" else LEADERSHIP_ROLE_NAMES\n\n    for role_name in allowed_names:",
+      "new": "    if access == \"general\":\n        allowed_names = [*CLAN_ROLE_NAMES, \"👋 Misafir\"]\n    else:\n        allowed_names = CLAN_ROLE_NAMES if access == \"clan\" else LEADERSHIP_ROLE_NAMES\n\n    for role_name in allowed_names:"
+    },
+    {
+      "file": "bot.py",
+      "guard": "guest_role = roles.get(\"👋 Misafir\")",
+      "old": "def make_voice_overwrites(\n    guild: discord.Guild,\n    roles: dict[str, discord.Role],\n    access: str,\n) -> dict[discord.Role | discord.Member, discord.PermissionOverwrite]:\n    overwrites = make_access_overwrites(guild, roles, access)\n    if access != \"public\":\n        overwrites[guild.default_role] = discord.PermissionOverwrite(\n            view_channel=False,\n            connect=False,\n        )\n        for role_name in CLAN_ROLE_NAMES:\n            role = roles.get(role_name)\n            if role:\n                overwrites[role] = discord.PermissionOverwrite(\n                    view_channel=True,\n                    connect=True,\n                    speak=True,\n                    stream=True,\n                )\n    else:\n        overwrites[guild.default_role] = discord.PermissionOverwrite(\n            view_channel=True,\n            connect=True,\n            speak=True,\n        )\n    return overwrites",
+      "new": "def make_voice_overwrites(\n    guild: discord.Guild,\n    roles: dict[str, discord.Role],\n    access: str,\n) -> dict[discord.Role | discord.Member, discord.PermissionOverwrite]:\n    overwrites = make_access_overwrites(guild, roles, access)\n    if access != \"public\":\n        overwrites[guild.default_role] = discord.PermissionOverwrite(\n            view_channel=False,\n            connect=False,\n        )\n        for role_name in CLAN_ROLE_NAMES:\n            role = roles.get(role_name)\n            if role:\n                overwrites[role] = discord.PermissionOverwrite(\n                    view_channel=True,\n                    connect=True,\n                    speak=True,\n                    stream=True,\n                )\n        guest_role = roles.get(\"👋 Misafir\")\n        if guest_role:\n            overwrites[guest_role] = discord.PermissionOverwrite(\n                view_channel=True,\n                connect=True,\n                speak=True,\n                stream=True,\n            )\n    else:\n        overwrites[guild.default_role] = discord.PermissionOverwrite(\n            view_channel=True,\n            connect=True,\n            speak=True,\n        )\n    return overwrites"
+    },
+    {
       "file": "ticket_system.py",
-      "old": "Savaşçı / İnşaatçı / Farmcı / Her rol",
-      "new": "Roamer / Builder / Farmer"
+      "old": "👤 Üye",
+      "new": "⚡ ARC MAIN KADRO"
     },
     {
       "file": "ticket_system.py",
-      "old": "• Ana rol (Savaşçı / İnşaatçı / Farmcı vb.)",
-      "new": "• Ana rol (Roamer / Builder / Farmer vb.)"
-    },
-    {
-      "file": "ticket_system.py",
-      "old": "Roamer / Builder / Farmer / All Rounder",
-      "new": "Roamer / Builder / Farmer"
-    },
-    {
-      "file": "bot.py",
-      "old": "        intents = discord.Intents.default()\n        super().__init__(command_prefix=\"!\", intents=intents)",
-      "new": "        intents = discord.Intents.default()\n        intents.members = True\n        super().__init__(command_prefix=\"!\", intents=intents)"
-    },
-    {
-      "file": "bot.py",
-      "guard": "async def kadro(interaction: discord.Interaction) -> None:",
-      "old": "@bot.tree.command(name=\"rust-plan\", description=\"Rust şablonunun oluşturacağı yapıyı gösterir.\")",
-      "new": "@bot.tree.command(name=\"kadro\", description=\"Arctic klan kadrosunu rollere göre gösterir.\")\n@app_commands.guild_only()\nasync def kadro(interaction: discord.Interaction) -> None:\n    guild = interaction.guild\n    if guild is None:\n        await interaction.response.send_message(\"Bu komut sadece sunucuda kullanılabilir.\", ephemeral=True)\n        return\n\n    if not guild.chunked:\n        try:\n            await guild.chunk(cache=True)\n        except (discord.ClientException, discord.HTTPException):\n            pass\n\n    role_sections = [\n        (\"🎯 Roamer\", \"Roamer\"),\n        (\"🏗️ Builder\", \"Builder\"),\n        (\"⛏️ Farmer\", \"Farmer\"),\n    ]\n\n    embed = discord.Embed(\n        title=\"Arctic Klan Kadrosu\",\n        description=\"Kadro, Discord'da verilen rollere göre otomatik güncellenir.\",\n        colour=discord.Colour.blue(),\n    )\n\n    unique_members: set[int] = set()\n    for role_name, label in role_sections:\n        role = find_role(guild, role_name)\n        members = [] if role is None else sorted(\n            (member for member in role.members if not member.bot),\n            key=lambda member: member.display_name.casefold(),\n        )\n        unique_members.update(member.id for member in members)\n\n        if members:\n            value = \"\\n\".join(f\"• {member.mention}\" for member in members)\n            if len(value) > 1000:\n                value = value[:997] + \"...\"\n        else:\n            value = \"Henüz kimse yok.\"\n\n        embed.add_field(\n            name=f\"{label} — {len(members)}\",\n            value=value,\n            inline=False,\n        )\n\n    embed.set_footer(text=f\"Toplam kadro: {len(unique_members)} kişi\")\n    await interaction.response.send_message(embed=embed)\n\n\n@bot.tree.command(name=\"rust-plan\", description=\"Rust şablonunun oluşturacağı yapıyı gösterir.\")"
-    },
-    {
-      "file": "bot.py",
-      "guard": "from wipe_monitor import register_wipe_system",
-      "old": "from ticket_system import (\n    ApplicationPanelView,\n    TicketManagementView,\n    send_application_panel,\n)\n\nload_dotenv()",
-      "new": "from ticket_system import (\n    ApplicationPanelView,\n    TicketManagementView,\n    send_application_panel,\n)\nfrom wipe_monitor import register_wipe_system\n\nload_dotenv()"
-    },
-    {
-      "file": "bot.py",
-      "guard": "await register_wipe_system(self)",
-      "old": "        self.add_view(ApplicationPanelView())\n        self.add_view(TicketManagementView())\n\n        if DEV_GUILD_ID:",
-      "new": "        self.add_view(ApplicationPanelView())\n        self.add_view(TicketManagementView())\n        await register_wipe_system(self)\n\n        if DEV_GUILD_ID:"
-    },
-    {
-      "file": "wipe_monitor.py",
-      "old": "from zoneinfo import ZoneInfo\n",
-      "new": ""
-    },
-    {
-      "file": "wipe_monitor.py",
-      "guard": "tz_name = match.group(4).upper()",
-      "old": "    berlin = ZoneInfo(\"Europe/Berlin\")\n    local_now = now_utc.astimezone(berlin)\n\n    pattern = re.compile(\n        r\"(Survivors\\.gg(?:(?!Survivors\\.gg|FULLWIPE|MAP\\s+WIPE).){0,100}?)\\s+\"\n        r\"(FULLWIPE|MAP\\s+WIPE)\\s+(?:WIPED\\s*[✓✔]?\\s*)?\"\n        r\"(\\d{1,2}:\\d{2})\\s*(CEST|CET)\",\n        flags=re.I,\n    )\n\n    events: list[dict[str, Any]] = []\n    for match in pattern.finditer(section):\n        server_name = \" \".join(match.group(1).split()).strip(\" -|•\")\n        wipe_type = \" \".join(match.group(2).upper().split())\n        hour, minute = map(int, match.group(3).split(\":\"))\n\n        if re.search(r\"\\bmain\\b\", server_name, flags=re.I):\n            continue\n\n        event_local = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)",
-      "new": "    pattern = re.compile(\n        r\"(Survivors\\.gg(?:(?!Survivors\\.gg|FULLWIPE|MAP\\s+WIPE).){0,100}?)\\s+\"\n        r\"(FULLWIPE|MAP\\s+WIPE)\\s+(?:WIPED\\s*[✓✔]?\\s*)?\"\n        r\"(\\d{1,2}:\\d{2})\\s*(CEST|CET)\",\n        flags=re.I,\n    )\n\n    events: list[dict[str, Any]] = []\n    for match in pattern.finditer(section):\n        server_name = \" \".join(match.group(1).split()).strip(\" -|•\")\n        wipe_type = \" \".join(match.group(2).upper().split())\n        hour, minute = map(int, match.group(3).split(\":\"))\n        tz_name = match.group(4).upper()\n        local_tz = timezone(timedelta(hours=2 if tz_name == \"CEST\" else 1))\n        local_now = now_utc.astimezone(local_tz)\n\n        if re.search(r\"\\bmain\\b\", server_name, flags=re.I):\n            continue\n\n        event_local = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)"
-    },
-    {
-      "file": "wipe_monitor.py",
-      "guard": "raw.setdefault(\"status_messages\", {})",
-      "old": "            raw.setdefault(\"servers\", {})\n            raw.setdefault(\"events\", {})\n            return raw\n    except (OSError, json.JSONDecodeError):\n        pass\n    return {\"servers\": {}, \"events\": {}}",
-      "new": "            raw.setdefault(\"servers\", {})\n            raw.setdefault(\"events\", {})\n            raw.setdefault(\"status_messages\", {})\n            return raw\n    except (OSError, json.JSONDecodeError):\n        pass\n    return {\"servers\": {}, \"events\": {}, \"status_messages\": {}}"
-    },
-    {
-      "file": "wipe_monitor.py",
-      "guard": "await self.refresh_status_panels()",
-      "old": "                await self.poll_survivors_site()\n                self.last_survivors_poll = started\n\n            elapsed = (_utc_now() - started).total_seconds()",
-      "new": "                await self.poll_survivors_site()\n                self.last_survivors_poll = started\n\n            await self.refresh_status_panels()\n            elapsed = (_utc_now() - started).total_seconds()"
-    },
-    {
-      "file": "wipe_monitor.py",
-      "guard": "async def refresh_status_panels(self) -> None:",
-      "old": "        return channels\n\n    async def _send_embed(self, embed: discord.Embed, guild: discord.Guild | None = None) -> int:",
-      "new": "        return channels\n\n    def _build_status_embed(self) -> discord.Embed:\n        now = _utc_now()\n        unix = int(now.timestamp())\n        embed = discord.Embed(\n            title=\"Arctic Wipe Takibi\",\n            description=(\n                \"Bu panel **otomatik çalışır ve sürekli güncellenir.**\\n\"\n                \"Takip edilen sunuculardan biri wipe olduğunda bu kanala ayrıca wipe duyurusu düşer.\"\n            ),\n            colour=discord.Colour.from_rgb(105, 170, 220),\n        )\n        embed.add_field(name=\"Canlı takip\", value=_format_health(self), inline=False)\n        embed.add_field(\n            name=\"Kontrol aralığı\",\n            value=f\"Main sunucular: {WIPE_POLL_SECONDS} sn\\nSurvivors.gg: {SURVIVORS_POLL_SECONDS // 60} dk\",\n            inline=True,\n        )\n        embed.add_field(name=\"Son kontrol\", value=f\"<t:{unix}:R>\", inline=True)\n        embed.set_footer(text=\"Arctic • Otomatik Wipe Takibi • Komut yazmana gerek yok\")\n        return embed\n\n    async def refresh_status_panels(self) -> None:\n        channels = self.target_channels()\n        if not channels:\n            return\n\n        embed = self._build_status_embed()\n        for channel in channels:\n            key = str(channel.id)\n            async with self.state_lock:\n                status_messages = self.state.setdefault(\"status_messages\", {})\n                raw_message_id = status_messages.get(key)\n\n            message: discord.Message | None = None\n            if raw_message_id:\n                try:\n                    message = await channel.fetch_message(int(raw_message_id))\n                except (ValueError, discord.NotFound, discord.Forbidden, discord.HTTPException):\n                    message = None\n\n            if message is None:\n                try:\n                    async for candidate in channel.history(limit=30):\n                        if (\n                            self.bot.user is not None\n                            and candidate.author.id == self.bot.user.id\n                            and candidate.embeds\n                            and candidate.embeds[0].title == \"Arctic Wipe Takibi\"\n                        ):\n                            message = candidate\n                            break\n                except (discord.Forbidden, discord.HTTPException):\n                    pass\n\n            try:\n                if message is None:\n                    message = await channel.send(\n                        embed=embed,\n                        allowed_mentions=discord.AllowedMentions.none(),\n                    )\n                else:\n                    await message.edit(embed=embed)\n            except (discord.Forbidden, discord.HTTPException) as exc:\n                log.warning(\"Kalıcı wipe paneli güncellenemedi [%s]: %s\", channel, exc)\n                continue\n\n            async with self.state_lock:\n                status_messages = self.state.setdefault(\"status_messages\", {})\n                if status_messages.get(key) != message.id:\n                    status_messages[key] = message.id\n                    _write_state(self.state)\n\n    async def _send_embed(self, embed: discord.Embed, guild: discord.Guild | None = None) -> int:"
+      "old": "Üye rolü",
+      "new": "ARC MAIN KADRO rolü"
     }
   ]
 }
