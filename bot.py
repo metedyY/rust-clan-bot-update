@@ -57,6 +57,80 @@ def apply_patches(config: dict) -> None:
             target.write_text(text.replace(old, new), encoding="utf-8")
 
 
+def apply_ticket_steam_migration() -> None:
+    """Başvuru modalına Steam profil linki ekler; Discord'un 5 alan limitine uyar."""
+    target = BASE_DIR / "ticket_system.py"
+    if not target.is_file():
+        return
+
+    text = target.read_text(encoding="utf-8")
+    updated = text
+
+    if "steam_profile = discord.ui.TextInput(" not in updated:
+        old_fields = '''    activity = discord.ui.TextInput(
+        label="Günlük aktiflik",
+        placeholder="Örn: Günde 5-6 saat, wipe günü tam aktif",
+        min_length=2,
+        max_length=100,
+    )
+    about = discord.ui.TextInput(
+        label="Neden klana katılmak istiyorsun?",
+        placeholder="Kısaca kendinden ve oyun tarzından bahset.",
+        style=discord.TextStyle.paragraph,
+        min_length=10,
+        max_length=700,
+    )'''
+        new_fields = '''    steam_profile = discord.ui.TextInput(
+        label="Steam profil linkin",
+        placeholder="Örn: https://steamcommunity.com/id/kullaniciadi",
+        min_length=20,
+        max_length=200,
+    )
+    profile = discord.ui.TextInput(
+        label="Aktiflik ve oyun tarzın",
+        placeholder="Örn: Günde 5-6 saat aktifim. Roamer ağırlıklı oynuyorum.",
+        style=discord.TextStyle.paragraph,
+        min_length=10,
+        max_length=700,
+    )'''
+        updated = updated.replace(old_fields, new_fields, 1)
+
+    if "Geçerli bir Steam profil linki girmelisin" not in updated:
+        anchor = '''        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        try:'''
+        steam_validation = '''        steam_url = str(self.steam_profile.value).strip()
+        steam_pattern = r"^https?://(?:www\\.)?steamcommunity\\.com/(?:id|profiles)/[^/\\s?#]+/?(?:[?#].*)?$"
+        if not re.match(steam_pattern, steam_url, flags=re.I):
+            await interaction.response.send_message(
+                "❌ Geçerli bir Steam profil linki girmelisin. Örnek: `https://steamcommunity.com/id/kullaniciadi`",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        try:'''
+        updated = updated.replace(anchor, steam_validation, 1)
+
+    old_embed = '''            embed.add_field(name="Ana Rol", value=str(self.main_role.value), inline=True)
+            embed.add_field(name="Günlük Aktiflik", value=str(self.activity.value), inline=False)
+            embed.add_field(name="Hakkında", value=str(self.about.value), inline=False)'''
+    new_embed = '''            embed.add_field(name="Ana Rol", value=str(self.main_role.value), inline=True)
+            embed.add_field(name="Steam Profili", value=f"<{steam_url}>", inline=False)
+            embed.add_field(name="Aktiflik / Oyun Tarzı", value=str(self.profile.value), inline=False)'''
+    updated = updated.replace(old_embed, new_embed, 1)
+
+    old_panel = '''            "• Günlük aktiflik\\n"
+            "• Kendin ve oyun tarzın hakkında kısa bilgi\\n\\n"'''
+    new_panel = '''            "• Steam profil linki\\n"
+            "• Günlük aktiflik + kendin ve oyun tarzın hakkında kısa bilgi\\n\\n"'''
+    updated = updated.replace(old_panel, new_panel, 1)
+
+    if updated != text:
+        target.write_text(updated, encoding="utf-8")
+
+
 def apply_builtin_migrations() -> None:
     """Paket içindeki yeni modülleri gerçek bota bağlayan idempotent migrationlar."""
     target = BASE_DIR / "bot.py"
@@ -98,6 +172,7 @@ def main() -> None:
     backup = newest_backup()
     restore_backup(backup)
     apply_patches(config)
+    apply_ticket_steam_migration()
     apply_builtin_migrations()
 
     try:
