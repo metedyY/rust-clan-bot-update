@@ -1,6 +1,8 @@
 # Arctic Rust Clan Bot Updates
 
-Bu depo Arctic Rust Clan Discord botunun otomatik güncelleme paketini barındırır.
+Bu depo Arctic Rust Clan Discord botunun `/guncelle` sistemi için otomatik güncelleme kaynağıdır.
 
-- latest.zip: /guncelle komutunun indirdiği güncel paket.
-- .env ve Discord token bu depoya yüklenmez.
+Güncelleme adresi:
+`https://github.com/metedyY/rust-clan-bot-update/archive/refs/heads/main.zip`
+
+`.env` ve Discord bot tokenı bu depoya yüklenmez.
