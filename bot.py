@@ -24,7 +24,7 @@ def restore_backup(source: Path) -> None:
     # Paket içindeki yeni modüller korunur; yedekteki eski kopyalar üstüne yazılmaz.
     ignored = {
         ".env", "backups", "__pycache__", ".git", ".venv", "venv",
-        "wipe_monitor_v2.py", "role_layout.py",
+        "wipe_monitor_v2.py", "role_layout.py", "ticket_form_v2.py",
     }
     for item in source.iterdir():
         if item.name in ignored:
@@ -58,7 +58,7 @@ def apply_patches(config: dict) -> None:
 
 
 def apply_ticket_steam_migration() -> None:
-    """Başvuru modalına Steam profil linki ekler; Discord'un 5 alan limitine uyar."""
+    """Eski ticket_system.py kullanan kurulumları da geriye dönük olarak günceller."""
     target = BASE_DIR / "ticket_system.py"
     if not target.is_file():
         return
@@ -95,7 +95,7 @@ def apply_ticket_steam_migration() -> None:
     )'''
         updated = updated.replace(old_fields, new_fields, 1)
 
-    if "Geçerli bir Steam profil linki girmelisin" not in updated:
+    if "Geçerli bir Steam profil linki girmelisin" not in updated and "steam_profile = discord.ui.TextInput(" in updated:
         anchor = '''        await interaction.response.defer(ephemeral=True, thinking=True)
 
         try:'''
@@ -124,6 +124,7 @@ def apply_ticket_steam_migration() -> None:
     old_panel = '''            "• Günlük aktiflik\\n"
             "• Kendin ve oyun tarzın hakkında kısa bilgi\\n\\n"'''
     new_panel = '''            "• Steam profil linki\\n"
+            "  Örnek: `https://steamcommunity.com/id/kullaniciadi`\\n"
             "• Günlük aktiflik + kendin ve oyun tarzın hakkında kısa bilgi\\n\\n"'''
     updated = updated.replace(old_panel, new_panel, 1)
 
@@ -141,6 +142,11 @@ def apply_builtin_migrations() -> None:
     updated = text.replace(
         "from wipe_monitor import register_wipe_system",
         "from wipe_monitor_v2 import register_wipe_system",
+    )
+    # Başvuru butonu ve /basvuru-panel artık kesin olarak Steam alanlı v2 formunu kullanır.
+    updated = updated.replace(
+        "from ticket_system import (",
+        "from ticket_form_v2 import (",
     )
 
     if "from role_layout import apply_arc_role_layout" not in updated:
