@@ -6,7 +6,8 @@ from datetime import date, datetime, timedelta, timezone
 import discord
 import wipe_monitor as base
 
-# US Main'ler çıkarıldı. Atlas'ın EU 2X Medium sunucusu "Atlas EU 2X Main" adıyla eklendi.
+# Kullanıcının istediği EU Main listesi.
+# Survivors.gg Main ve Atlas EU 2X Main kaldırıldı; Rustoria EU Main eklendi.
 base.MAIN_SERVERS = (
     base.ServerSpec(
         "rustafied-eu-main", "Rustafied EU Main", "Rustafied",
@@ -21,12 +22,8 @@ base.MAIN_SERVERS = (
         "main.eu.moose.gg", 28010, 28015, "https://moose.gg/",
     ),
     base.ServerSpec(
-        "survivors-main", "Survivors.gg Main", "Survivors.gg",
-        "main.survivors.gg", 28010, 28011, "https://survivors.gg/servers/",
-    ),
-    base.ServerSpec(
-        "atlas-eu-2x-main", "Atlas EU 2X Main", "Atlas",
-        "2xmedium.atlasrust.uk", 28010, 28015, "https://store.atlasrustservers.com/",
+        "rustoria-eu-main", "Rustoria EU Main", "Rustoria",
+        "main.rustoria.uk", 28010, 28015, "https://rustoria.co/servers",
     ),
 )
 
@@ -40,18 +37,14 @@ def _uk_offset(d: date) -> int:
     return 1 if _last_sunday(d.year, 3) <= d < _last_sunday(d.year, 10) else 0
 
 
-def _central_offset(d: date) -> int:
-    return 2 if _last_sunday(d.year, 3) <= d < _last_sunday(d.year, 10) else 1
-
-
 def _local_to_utc(d: date, hour: int, offset: int) -> datetime:
     tz = timezone(timedelta(hours=offset))
     return datetime(d.year, d.month, d.day, hour, 0, tzinfo=tz).astimezone(timezone.utc)
 
 
 def _next_thursday_main(now: datetime) -> datetime:
-    # Rustafied / Rustopia / Rusty Moose EU Main:
-    # normal Perşembe 15:00 London, ayın ilk Perşembesi force wipe 19:00 London.
+    # Rustafied / Rustopia / Rusty Moose / Rustoria EU Main:
+    # normal Perşembe 15:00 London; ayın ilk Perşembesi force wipe saati yaklaşık 19:00 London.
     for step in range(40):
         d = (now - timedelta(days=1)).date() + timedelta(days=step)
         if d.weekday() != 3:
@@ -63,39 +56,7 @@ def _next_thursday_main(now: datetime) -> datetime:
     return now + timedelta(days=7)
 
 
-def _next_survivors(now: datetime) -> datetime:
-    # Survivors Main: her Cuma 18:00 CET/CEST.
-    for step in range(15):
-        d = (now - timedelta(days=1)).date() + timedelta(days=step)
-        if d.weekday() == 4:
-            candidate = _local_to_utc(d, 18, _central_offset(d))
-            if candidate > now:
-                return candidate
-    return now + timedelta(days=7)
-
-
-def _next_atlas(now: datetime) -> datetime:
-    # Atlas EU 2X: 1., 3. ve varsa 5. Perşembe.
-    # Force (1. Perşembe) 19:00 London; diğerleri 17:00 London.
-    for step in range(70):
-        d = (now - timedelta(days=1)).date() + timedelta(days=step)
-        if d.weekday() != 3:
-            continue
-        nth = ((d.day - 1) // 7) + 1
-        if nth not in {1, 3, 5}:
-            continue
-        hour = 19 if nth == 1 else 17
-        candidate = _local_to_utc(d, hour, _uk_offset(d))
-        if candidate > now:
-            return candidate
-    return now + timedelta(days=14)
-
-
 def next_wipe(spec: base.ServerSpec, now: datetime) -> datetime:
-    if spec.key == "survivors-main":
-        return _next_survivors(now)
-    if spec.key == "atlas-eu-2x-main":
-        return _next_atlas(now)
     return _next_thursday_main(now)
 
 
@@ -112,7 +73,7 @@ def _format_health_v2(service: base.WipeMonitor) -> str:
         wipe_at = int(next_wipe(spec, now).timestamp())
         lines.append(f"{icon} **{spec.display_name}**{players}")
         lines.append(f"└ ⏳ Sonraki wipe: <t:{wipe_at}:R> • <t:{wipe_at}:f>")
-    # Kullanıcının isteğiyle "Survivors.gg resmi wipe sayfası" sağlık satırı gösterilmiyor.
+    # Survivors.gg resmi wipe sayfası sağlık satırı panelde gösterilmez.
     return "\n".join(lines)
 
 
