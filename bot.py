@@ -39,6 +39,7 @@ def apply_patches(config: dict) -> None:
         rel = patch.get("file", "")
         old = patch.get("old", "")
         new = patch.get("new", "")
+        guard = patch.get("guard", "")
         if not rel or not old:
             continue
         target = (BASE_DIR / rel).resolve()
@@ -46,6 +47,8 @@ def apply_patches(config: dict) -> None:
         if not target.is_file():
             continue
         text = target.read_text(encoding="utf-8")
+        if guard and guard in text:
+            continue
         if old in text:
             target.write_text(text.replace(old, new), encoding="utf-8")
 
