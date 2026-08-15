@@ -21,11 +21,10 @@ def newest_backup() -> Path:
 
 
 def restore_backup(source: Path) -> None:
-    # Güncelleme paketindeki wipe_monitor_v2.py yeni sürüm olarak korunur;
-    # eski yedekteki kopya bunun üzerine yazılmaz.
+    # Paket içindeki yeni modüller korunur; yedekteki eski kopyalar üstüne yazılmaz.
     ignored = {
         ".env", "backups", "__pycache__", ".git", ".venv", "venv",
-        "wipe_monitor_v2.py",
+        "wipe_monitor_v2.py", "role_layout.py",
     }
     for item in source.iterdir():
         if item.name in ignored:
@@ -59,15 +58,37 @@ def apply_patches(config: dict) -> None:
 
 
 def apply_builtin_migrations() -> None:
-    """Paket içindeki yeni modülleri gerçek bota bağlayan küçük, idempotent migrationlar."""
+    """Paket içindeki yeni modülleri gerçek bota bağlayan idempotent migrationlar."""
     target = BASE_DIR / "bot.py"
     if not target.is_file():
         return
+
     text = target.read_text(encoding="utf-8")
     updated = text.replace(
         "from wipe_monitor import register_wipe_system",
         "from wipe_monitor_v2 import register_wipe_system",
     )
+
+    if "from role_layout import apply_arc_role_layout" not in updated:
+        anchor = "from wipe_monitor_v2 import register_wipe_system"
+        if anchor in updated:
+            updated = updated.replace(
+                anchor,
+                anchor + "\nfrom role_layout import apply_arc_role_layout",
+                1,
+            )
+
+    if "await apply_arc_role_layout(guild)" not in updated:
+        presence_line = '    await bot.change_presence(activity=discord.Game(name="Rust Clan | Kurulum + Başvuru"))'
+        if presence_line in updated:
+            updated = updated.replace(
+                presence_line,
+                "    for guild in bot.guilds:\n"
+                "        await apply_arc_role_layout(guild)\n"
+                + presence_line,
+                1,
+            )
+
     if updated != text:
         target.write_text(updated, encoding="utf-8")
 
