@@ -21,7 +21,12 @@ def newest_backup() -> Path:
 
 
 def restore_backup(source: Path) -> None:
-    ignored = {".env", "backups", "__pycache__", ".git", ".venv", "venv"}
+    # Güncelleme paketindeki wipe_monitor_v2.py yeni sürüm olarak korunur;
+    # eski yedekteki kopya bunun üzerine yazılmaz.
+    ignored = {
+        ".env", "backups", "__pycache__", ".git", ".venv", "venv",
+        "wipe_monitor_v2.py",
+    }
     for item in source.iterdir():
         if item.name in ignored:
             continue
