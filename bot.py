@@ -53,11 +53,26 @@ def apply_patches(config: dict) -> None:
             target.write_text(text.replace(old, new), encoding="utf-8")
 
 
+def apply_builtin_migrations() -> None:
+    """Paket içindeki yeni modülleri gerçek bota bağlayan küçük, idempotent migrationlar."""
+    target = BASE_DIR / "bot.py"
+    if not target.is_file():
+        return
+    text = target.read_text(encoding="utf-8")
+    updated = text.replace(
+        "from wipe_monitor import register_wipe_system",
+        "from wipe_monitor_v2 import register_wipe_system",
+    )
+    if updated != text:
+        target.write_text(updated, encoding="utf-8")
+
+
 def main() -> None:
     config = json.loads(PATCH_FILE.read_text(encoding="utf-8")) if PATCH_FILE.is_file() else {}
     backup = newest_backup()
     restore_backup(backup)
     apply_patches(config)
+    apply_builtin_migrations()
 
     try:
         PATCH_FILE.unlink(missing_ok=True)
