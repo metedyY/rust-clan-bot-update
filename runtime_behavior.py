@@ -79,9 +79,9 @@ async def _arctic_quiet_on_ready():
             pass
 
     if _arctic_was_updated:
-        print("Güncellendi ve çalışıyor.", flush=True)
+        print("Güncellendi ve çalışıyor", flush=True)
     else:
-        print("Açık, çalışıyor.", flush=True)
+        print("Açık çalışıyor", flush=True)
 
 
 bot.on_ready = _arctic_quiet_on_ready
