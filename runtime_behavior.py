@@ -3,20 +3,22 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+EARLY_START = "# ARCTIC_EARLY_LOG_SILENCE_START"
+EARLY_END = "# ARCTIC_EARLY_LOG_SILENCE_END"
 START_MARKER = "# ARCTIC_QUIET_CONSOLE_START"
 END_MARKER = "# ARCTIC_QUIET_CONSOLE_END"
 
 
-def _remove_old_console_block(text: str) -> str:
+def _remove_marked_block(text: str, start: str, end: str) -> str:
     pattern = re.compile(
-        rf"\n?{re.escape(START_MARKER)}.*?{re.escape(END_MARKER)}\n?",
+        rf"\n?{re.escape(start)}.*?{re.escape(end)}\n?",
         flags=re.S,
     )
     return pattern.sub("\n", text)
 
 
 def _remove_startup_role_layout(text: str) -> str:
-    # Kullanıcının Discord'da elle yaptığı rol ayarlarına normal açılışta dokunma.
+    # Normal açılışta kullanıcının Discord'da elle yaptığı rol/izin ayarlarına dokunma.
     text = re.sub(
         r"^\s*from\s+role_layout\s+import\s+apply_arc_role_layout\s*$\n?",
         "",
@@ -32,14 +34,27 @@ def _remove_startup_role_layout(text: str) -> str:
     return text
 
 
+def _inject_early_log_silence(text: str) -> str:
+    block = '''# ARCTIC_EARLY_LOG_SILENCE_START
+import logging as _arctic_early_logging
+_arctic_early_logging.disable(_arctic_early_logging.CRITICAL)
+# ARCTIC_EARLY_LOG_SILENCE_END
+
+'''
+
+    future = "from __future__ import annotations"
+    if future in text:
+        pos = text.find(future) + len(future)
+        return text[:pos] + "\n\n" + block + text[pos:].lstrip("\r\n")
+    return block + text
+
+
 def _inject_quiet_console(text: str) -> str:
     block = r'''
 # ARCTIC_QUIET_CONSOLE_START
 # Başarılı açılışlarda CMD yalnızca tek durum satırı gösterir.
-import logging as _arctic_logging
 from pathlib import Path as _ArcticPath
 
-_arctic_logging.disable(_arctic_logging.CRITICAL)
 _arctic_original_on_ready = getattr(bot, "on_ready", None)
 _arctic_status_printed = False
 
@@ -88,8 +103,10 @@ def apply_runtime_migration(bot_path: Path) -> None:
         return
 
     text = bot_path.read_text(encoding="utf-8")
-    updated = _remove_old_console_block(text)
+    updated = _remove_marked_block(text, EARLY_START, EARLY_END)
+    updated = _remove_marked_block(updated, START_MARKER, END_MARKER)
     updated = _remove_startup_role_layout(updated)
+    updated = _inject_early_log_silence(updated)
     updated = _inject_quiet_console(updated)
 
     if updated != text:
