@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import re
 
 import discord
 
 from ticket_system import (
-    TicketManagementView,
+    TicketManagementView as BaseTicketManagementView,
     ensure_ticket_category,
     find_existing_ticket,
     get_ticket_staff_roles,
@@ -20,26 +21,116 @@ STEAM_RE = re.compile(
     r"^https?://(?:www\.)?steamcommunity\.com/(?:id|profiles)/[^/\s?#]+/?(?:[?#].*)?$",
     flags=re.I,
 )
+MAIN_ROLE_NAME = "⚡ ARC MAIN KADRO"
+
+
+def _embed_field(embed: discord.Embed, name: str) -> str | None:
+    for field in embed.fields:
+        if field.name.casefold() == name.casefold():
+            return str(field.value).strip()
+    return None
+
+
+def _application_data_from_message(message: discord.Message | None) -> tuple[int, str, str] | None:
+    if message is None or not message.embeds:
+        return None
+
+    embed = message.embeds[0]
+    description = embed.description or ""
+    user_match = re.search(r"Kullanıcı ID:\s*`?(\d{15,22})`?", description, flags=re.I)
+    applicant_name = _embed_field(embed, "İsim")
+    age = _embed_field(embed, "Yaş")
+
+    if not user_match or not applicant_name or not age:
+        return None
+
+    return int(user_match.group(1)), applicant_name, age
+
+
+async def _rename_after_accept(
+    guild: discord.Guild,
+    user_id: int,
+    applicant_name: str,
+    age: str,
+    had_main_role: bool,
+) -> None:
+    # Kabul callback'inin rolü vermesini bekle. Red/close işleminde rol gelmeyeceği için nick değişmez.
+    for _ in range(8):
+        await asyncio.sleep(0.75)
+        member = guild.get_member(user_id)
+        if member is None:
+            try:
+                member = await guild.fetch_member(user_id)
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                return
+
+        main_role = discord.utils.get(guild.roles, name=MAIN_ROLE_NAME)
+        if main_role is None:
+            return
+
+        has_main_role = main_role in member.roles
+        if has_main_role and not had_main_role:
+            clean_name = re.sub(r"\s+", " ", applicant_name).strip().strip("/")
+            clean_age = re.sub(r"\D", "", age)[:3]
+            if not clean_name or not clean_age:
+                return
+
+            nickname = f"{clean_name}/{clean_age}"[:32]
+            try:
+                await member.edit(
+                    nick=nickname,
+                    reason="Arctic: kabul edilen başvuruda İsim/Yaş formatı",
+                )
+            except (discord.Forbidden, discord.HTTPException):
+                pass
+            return
+
+
+class TicketManagementView(BaseTicketManagementView):
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        allowed = await super().interaction_check(interaction)
+        if not allowed:
+            return False
+
+        guild = interaction.guild
+        if guild is None:
+            return True
+
+        data = _application_data_from_message(interaction.message)
+        if data is None:
+            return True
+
+        user_id, applicant_name, age = data
+        member = guild.get_member(user_id)
+        main_role = discord.utils.get(guild.roles, name=MAIN_ROLE_NAME)
+        had_main_role = bool(member and main_role and main_role in member.roles)
+
+        # Hangi butonun base view'da "Kabul" olduğunu bilmeye ihtiyaç yok:
+        # işlemden sonra kişi ana kadro rolünü yeni aldıysa nick otomatik değiştirilir.
+        asyncio.create_task(
+            _rename_after_accept(guild, user_id, applicant_name, age, had_main_role)
+        )
+        return True
 
 
 class ApplicationModal(discord.ui.Modal, title="Arctic Klan Başvurusu"):
+    applicant_name = discord.ui.TextInput(
+        label="İsmin",
+        placeholder="Örn: Mahmut",
+        min_length=2,
+        max_length=32,
+    )
     age = discord.ui.TextInput(
         label="Yaşın",
-        placeholder="Örn: 18",
+        placeholder="Örn: 31",
         min_length=1,
         max_length=3,
     )
-    rust_hours = discord.ui.TextInput(
-        label="Rust saatin",
-        placeholder="Örn: 2500 saat",
-        min_length=1,
-        max_length=40,
-    )
-    main_role = discord.ui.TextInput(
-        label="Ana rolün",
-        placeholder="Roamer / Builder / Farmer",
-        min_length=2,
-        max_length=60,
+    rust_role = discord.ui.TextInput(
+        label="Rust saatin / Ana rolün",
+        placeholder="Örn: 2500 saat / Roamer",
+        min_length=3,
+        max_length=100,
     )
     steam_profile = discord.ui.TextInput(
         label="Steam profil linkin",
@@ -70,6 +161,15 @@ class ApplicationModal(discord.ui.Modal, title="Arctic Klan Başvurusu"):
                 f"Zaten açık bir başvurun var: {existing.mention}",
                 ephemeral=True,
             )
+            return
+
+        applicant_name = re.sub(r"\s+", " ", str(self.applicant_name.value)).strip().strip("/")
+        age = str(self.age.value).strip()
+        if not applicant_name:
+            await interaction.response.send_message("❌ Geçerli bir isim girmelisin.", ephemeral=True)
+            return
+        if not re.fullmatch(r"\d{1,3}", age):
+            await interaction.response.send_message("❌ Yaş alanına sadece sayı girmelisin. Örnek: `31`", ephemeral=True)
             return
 
         steam_url = str(self.steam_profile.value).strip()
@@ -103,12 +203,12 @@ class ApplicationModal(discord.ui.Modal, title="Arctic Klan Başvurusu"):
                 ),
                 colour=discord.Colour.orange(),
             )
-            embed.add_field(name="Yaş", value=str(self.age.value), inline=True)
-            embed.add_field(name="Rust Saati", value=str(self.rust_hours.value), inline=True)
-            embed.add_field(name="Ana Rol", value=str(self.main_role.value), inline=True)
+            embed.add_field(name="İsim", value=applicant_name, inline=True)
+            embed.add_field(name="Yaş", value=age, inline=True)
+            embed.add_field(name="Rust Saati / Ana Rol", value=str(self.rust_role.value), inline=False)
             embed.add_field(name="Steam Profili", value=f"[Profili Aç]({steam_url})\n`{steam_url}`", inline=False)
             embed.add_field(name="Aktiflik / Oyun Tarzı", value=str(self.profile.value), inline=False)
-            embed.set_footer(text="Yetkililer başvuruyu kabul edebilir, reddedebilir veya kapatabilir.")
+            embed.set_footer(text="Kabul edildiğinde sunucu adı otomatik İsim/Yaş formatına çevrilir.")
 
             notify_roles = [
                 role for role in get_ticket_staff_roles(guild)
@@ -181,12 +281,13 @@ async def send_application_panel(channel: discord.TextChannel) -> discord.Messag
             "Klanımıza katılmak için aşağıdaki **Başvuru Aç** butonunu kullan.\n\n"
             "Başvurunu tamamladıktan sonra sadece senin ve yetkililerin görebileceği özel bir başvuru kanalı açılır.\n\n"
             "**Başvuru Bilgileri**\n"
+            "• İsim\n"
             "• Yaş\n"
-            "• Rust saati\n"
-            "• Ana rol (Roamer / Builder / Farmer vb.)\n"
+            "• Rust saati / Ana rol (Örn: `2500 saat / Roamer`)\n"
             "• Steam profil linki\n"
             "  Örnek: `https://steamcommunity.com/id/kullaniciadi`\n"
-            "• Günlük aktiflik + kendin ve oyun tarzın hakkında kısa bilgi\n\n"
+            "• Günlük aktiflik + oyun tarzın hakkında kısa bilgi\n\n"
+            "**Kabul sonrası:** Sunucudaki adın otomatik `İsim/Yaş` formatına çevrilir. Örnek: `Mahmut/31`\n\n"
             "**Not:** Aynı anda yalnızca bir açık başvurun olabilir."
         ),
         colour=discord.Colour.blue(),
