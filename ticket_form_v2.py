@@ -116,13 +116,13 @@ class TicketManagementView(BaseTicketManagementView):
 class ApplicationModal(discord.ui.Modal, title="Arctic Klan Başvurusu"):
     applicant_name = discord.ui.TextInput(
         label="İsmin",
-        placeholder="Örn: Mahmut",
+        placeholder="Örn: Ahmet",
         min_length=2,
         max_length=32,
     )
     age = discord.ui.TextInput(
         label="Yaşın",
-        placeholder="Örn: 31",
+        placeholder="Örn: 21",
         min_length=1,
         max_length=3,
     )
