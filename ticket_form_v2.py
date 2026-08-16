@@ -283,11 +283,9 @@ async def send_application_panel(channel: discord.TextChannel) -> discord.Messag
             "**Başvuru Bilgileri**\n"
             "• İsim\n"
             "• Yaş\n"
-            "• Rust saati / Ana rol (Örn: `2500 saat / Roamer`)\n"
+            "• Rust saati / Ana rol\n"
             "• Steam profil linki\n"
-            "  Örnek: `https://steamcommunity.com/id/kullaniciadi`\n"
             "• Günlük aktiflik + oyun tarzın hakkında kısa bilgi\n\n"
-            "**Kabul sonrası:** Sunucudaki adın otomatik `İsim/Yaş` formatına çevrilir. Örnek: `Mahmut/31`\n\n"
             "**Not:** Aynı anda yalnızca bir açık başvurun olabilir."
         ),
         colour=discord.Colour.blue(),
