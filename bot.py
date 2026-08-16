@@ -28,7 +28,7 @@ def restore_backup(source: Path) -> None:
     ignored = {
         ".env", "backups", "__pycache__", ".git", ".venv", "venv",
         "wipe_monitor_v2.py", "role_layout.py", "ticket_form_v2.py",
-        "runtime_behavior.py",
+        "runtime_behavior.py", "member_log.py",
     }
     for item in source.iterdir():
         if item.name in ignored:
