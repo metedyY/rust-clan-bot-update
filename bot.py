@@ -6,9 +6,12 @@ import shutil
 import sys
 from pathlib import Path
 
+from runtime_behavior import apply_runtime_migration
+
 BASE_DIR = Path(__file__).resolve().parent
 BACKUPS_DIR = BASE_DIR / "backups"
 PATCH_FILE = BASE_DIR / "patches.json"
+UPDATE_MARKER = BASE_DIR / ".arctic_updated"
 
 
 def newest_backup() -> Path:
@@ -25,6 +28,7 @@ def restore_backup(source: Path) -> None:
     ignored = {
         ".env", "backups", "__pycache__", ".git", ".venv", "venv",
         "wipe_monitor_v2.py", "role_layout.py", "ticket_form_v2.py",
+        "runtime_behavior.py",
     }
     for item in source.iterdir():
         if item.name in ignored:
@@ -143,34 +147,17 @@ def apply_builtin_migrations() -> None:
         "from wipe_monitor import register_wipe_system",
         "from wipe_monitor_v2 import register_wipe_system",
     )
-    # Başvuru butonu ve /basvuru-panel artık kesin olarak Steam alanlı v2 formunu kullanır.
+    # Başvuru butonu ve /basvuru-panel Steam alanlı v2 formunu kullanır.
     updated = updated.replace(
         "from ticket_system import (",
         "from ticket_form_v2 import (",
     )
 
-    if "from role_layout import apply_arc_role_layout" not in updated:
-        anchor = "from wipe_monitor_v2 import register_wipe_system"
-        if anchor in updated:
-            updated = updated.replace(
-                anchor,
-                anchor + "\nfrom role_layout import apply_arc_role_layout",
-                1,
-            )
-
-    if "await apply_arc_role_layout(guild)" not in updated:
-        presence_line = '    await bot.change_presence(activity=discord.Game(name="Rust Clan | Kurulum + Başvuru"))'
-        if presence_line in updated:
-            updated = updated.replace(
-                presence_line,
-                "    for guild in bot.guilds:\n"
-                "        await apply_arc_role_layout(guild)\n"
-                + presence_line,
-                1,
-            )
-
     if updated != text:
         target.write_text(updated, encoding="utf-8")
+
+    # Normal açılışta rol/izin ayarlarına dokunma ve CMD çıktısını sadeleştir.
+    apply_runtime_migration(target)
 
 
 def main() -> None:
@@ -183,6 +170,12 @@ def main() -> None:
 
     try:
         PATCH_FILE.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+    # Bir sonraki başarılı Discord bağlantısında "Güncellendi ve çalışıyor." yazdırılır.
+    try:
+        UPDATE_MARKER.write_text("1", encoding="utf-8")
     except OSError:
         pass
 
