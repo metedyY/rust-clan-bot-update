@@ -70,16 +70,16 @@ async def _rename_after_accept(
 
         has_main_role = main_role in member.roles
         if has_main_role and not had_main_role:
-            clean_name = re.sub(r"\s+", " ", applicant_name).strip().strip("/")
+            clean_name = re.sub(r"\s+", " ", applicant_name).strip().strip("/- ")
             clean_age = re.sub(r"\D", "", age)[:3]
             if not clean_name or not clean_age:
                 return
 
-            nickname = f"{clean_name}/{clean_age}"[:32]
+            nickname = f"{clean_name} - {clean_age}"[:32]
             try:
                 await member.edit(
                     nick=nickname,
-                    reason="Arctic: kabul edilen başvuruda İsim/Yaş formatı",
+                    reason="Arctic: kabul edilen başvuruda İsim - Yaş formatı",
                 )
             except (discord.Forbidden, discord.HTTPException):
                 pass
@@ -105,8 +105,6 @@ class TicketManagementView(BaseTicketManagementView):
         main_role = discord.utils.get(guild.roles, name=MAIN_ROLE_NAME)
         had_main_role = bool(member and main_role and main_role in member.roles)
 
-        # Hangi butonun base view'da "Kabul" olduğunu bilmeye ihtiyaç yok:
-        # işlemden sonra kişi ana kadro rolünü yeni aldıysa nick otomatik değiştirilir.
         asyncio.create_task(
             _rename_after_accept(guild, user_id, applicant_name, age, had_main_role)
         )
@@ -163,13 +161,13 @@ class ApplicationModal(discord.ui.Modal, title="Arctic Klan Başvurusu"):
             )
             return
 
-        applicant_name = re.sub(r"\s+", " ", str(self.applicant_name.value)).strip().strip("/")
+        applicant_name = re.sub(r"\s+", " ", str(self.applicant_name.value)).strip().strip("/- ")
         age = str(self.age.value).strip()
         if not applicant_name:
             await interaction.response.send_message("❌ Geçerli bir isim girmelisin.", ephemeral=True)
             return
         if not re.fullmatch(r"\d{1,3}", age):
-            await interaction.response.send_message("❌ Yaş alanına sadece sayı girmelisin. Örnek: `31`", ephemeral=True)
+            await interaction.response.send_message("❌ Yaş alanına sadece sayı girmelisin. Örnek: `21`", ephemeral=True)
             return
 
         steam_url = str(self.steam_profile.value).strip()
@@ -208,7 +206,7 @@ class ApplicationModal(discord.ui.Modal, title="Arctic Klan Başvurusu"):
             embed.add_field(name="Rust Saati / Ana Rol", value=str(self.rust_role.value), inline=False)
             embed.add_field(name="Steam Profili", value=f"[Profili Aç]({steam_url})\n`{steam_url}`", inline=False)
             embed.add_field(name="Aktiflik / Oyun Tarzı", value=str(self.profile.value), inline=False)
-            embed.set_footer(text="Kabul edildiğinde sunucu adı otomatik İsim/Yaş formatına çevrilir.")
+            embed.set_footer(text="Kabul edildiğinde sunucu adı otomatik İsim - Yaş formatına çevrilir.")
 
             notify_roles = [
                 role for role in get_ticket_staff_roles(guild)
