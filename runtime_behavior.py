@@ -54,8 +54,12 @@ def _inject_quiet_console(text: str) -> str:
 # ARCTIC_QUIET_CONSOLE_START
 # Başarılı açılışlarda CMD yalnızca tek durum satırı gösterir.
 from pathlib import Path as _ArcticPath
+from member_log import register_member_log as _arctic_register_member_log
 
 _arctic_status_printed = False
+
+# BİLGİ/gelen-giden sistemi mevcut bot eventlerini ezmeden ayrı listenerlarla çalışır.
+_arctic_register_member_log(bot)
 
 
 async def _arctic_status_listener():
