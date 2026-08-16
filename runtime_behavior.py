@@ -55,15 +55,11 @@ def _inject_quiet_console(text: str) -> str:
 # Başarılı açılışlarda CMD yalnızca tek durum satırı gösterir.
 from pathlib import Path as _ArcticPath
 
-_arctic_original_on_ready = getattr(bot, "on_ready", None)
 _arctic_status_printed = False
 
 
-async def _arctic_quiet_on_ready():
+async def _arctic_status_listener():
     global _arctic_status_printed
-
-    if _arctic_original_on_ready is not None:
-        await _arctic_original_on_ready()
 
     if _arctic_status_printed:
         return
@@ -84,7 +80,8 @@ async def _arctic_quiet_on_ready():
         print("Açık çalışıyor", flush=True)
 
 
-bot.on_ready = _arctic_quiet_on_ready
+# Mevcut on_ready event'ini ezme; ayrı listener her durumda tetiklensin.
+bot.add_listener(_arctic_status_listener, "on_ready")
 # ARCTIC_QUIET_CONSOLE_END
 
 '''
