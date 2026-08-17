@@ -28,7 +28,7 @@ def restore_backup(source: Path) -> None:
     ignored = {
         ".env", "backups", "__pycache__", ".git", ".venv", "venv",
         "wipe_monitor_v2.py", "role_layout.py", "ticket_form_v2.py",
-        "runtime_behavior.py", "member_log.py", "voice_log.py",
+        "runtime_behavior.py", "member_log.py", "voice_log.py", "discord_ban.py",
     }
     for item in source.iterdir():
         if item.name in ignored:
@@ -156,7 +156,13 @@ def apply_builtin_migrations() -> None:
     if updated != text:
         target.write_text(updated, encoding="utf-8")
 
-    # Normal açılışta rol/izin ayarlarına dokunma, ek log listenerlarını bağla ve CMD çıktısını sadeleştir.
+    # Önceki yanlış Rust/RCON ban modülünü yerel kurulumdan kaldır.
+    try:
+        (BASE_DIR / "rust_admin.py").unlink(missing_ok=True)
+    except OSError:
+        pass
+
+    # Normal açılışta rol/izin ayarlarına dokunma, ek listener/komutları bağla ve CMD çıktısını sadeleştir.
     apply_runtime_migration(target)
 
 
