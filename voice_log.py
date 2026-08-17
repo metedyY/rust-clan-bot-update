@@ -8,6 +8,7 @@ CHANNEL_NAME = "ses-log"
 LEGACY_CHANNEL_NAMES = ("🔊・ses-log", "voice-log")
 ALLOWED_ROLE_NAMES = ("👑 Clan Owner", "🛠️ Moderator")
 CATEGORY_FALLBACK_NAME = "━━ 👑・YÖNETİM ━━"
+TOPIC = "Tüm ses kanallarındaki giriş, çıkış ve kanal değişikliklerini kaydeder."
 
 
 def _normalise(value: str) -> str:
@@ -51,6 +52,14 @@ def _overwrites(guild: discord.Guild) -> dict[discord.Role | discord.Member, dis
     return result
 
 
+def _overwrite_matches(
+    channel: discord.TextChannel,
+    target: discord.Role | discord.Member,
+    desired: discord.PermissionOverwrite,
+) -> bool:
+    return channel.overwrites_for(target).pair() == desired.pair()
+
+
 async def _ensure_channel(guild: discord.Guild) -> discord.TextChannel | None:
     category = _find_management_category(guild)
     if category is None:
@@ -71,42 +80,49 @@ async def _ensure_channel(guild: discord.Guild) -> discord.TextChannel | None:
 
     try:
         if channel is None:
-            channel = await guild.create_text_channel(
+            return await guild.create_text_channel(
                 CHANNEL_NAME,
                 category=category,
                 overwrites=_overwrites(guild),
-                topic="Tüm ses kanallarındaki giriş, çıkış ve kanal değişikliklerini kaydeder.",
+                topic=TOPIC,
                 reason="Arctic: özel ses-log kanalı",
             )
-            return channel
 
         changes: dict[str, object] = {}
         if channel.name != CHANNEL_NAME:
             changes["name"] = CHANNEL_NAME
         if channel.category_id != category.id:
             changes["category"] = category
+        if channel.topic != TOPIC:
+            changes["topic"] = TOPIC
         if changes:
             channel = await channel.edit(
                 **changes,
-                reason="Arctic: ses-log kanalını YÖNETİM alanına taşı",
+                reason="Arctic: ses-log kanalını YÖNETİM alanına yerleştir",
             )
 
         # Kanal yalnızca Owner, Moderator ve bot tarafından görülebilir.
         desired = _overwrites(guild)
         allowed_ids = {target.id for target in desired}
+
         for target in list(channel.overwrites):
-            if target.id not in allowed_ids:
-                await channel.set_permissions(
-                    target,
-                    overwrite=None,
-                    reason="Arctic: ses-log gizlilik temizliği",
-                )
+            if target.id in allowed_ids:
+                continue
+            await channel.set_permissions(
+                target,
+                overwrite=None,
+                reason="Arctic: ses-log gizlilik temizliği",
+            )
+
         for target, overwrite in desired.items():
+            if _overwrite_matches(channel, target, overwrite):
+                continue
             await channel.set_permissions(
                 target,
                 overwrite=overwrite,
                 reason="Arctic: ses-log gizlilik izinleri",
             )
+
         return channel
     except (discord.Forbidden, discord.HTTPException):
         return channel
@@ -161,7 +177,10 @@ async def _log_voice_change(
     embed.set_footer(text="Arctic Ses Log")
 
     try:
-        await channel.send(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+        await channel.send(
+            embed=embed,
+            allowed_mentions=discord.AllowedMentions.none(),
+        )
     except (discord.Forbidden, discord.HTTPException):
         pass
 
