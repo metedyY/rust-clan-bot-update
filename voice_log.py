@@ -1,26 +1,48 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 import discord
 
 CHANNEL_NAME = "ses-log"
 LEGACY_CHANNEL_NAMES = ("🔊・ses-log", "voice-log")
 ALLOWED_ROLE_NAMES = ("👑 Clan Owner", "🛠️ Moderator")
-CATEGORY_FALLBACK_NAME = "━━ 👑・YÖNETİM ━━"
 TOPIC = "Tüm ses kanallarındaki giriş, çıkış ve kanal değişikliklerini kaydeder."
+MANAGEMENT_HINT_CHANNELS = {
+    "yonetimsohbeti",
+    "basvurudegerlendirme",
+    "yetkililog",
+}
 
 
 def _normalise(value: str) -> str:
-    return re.sub(r"[^a-z0-9çğıöşü]+", "", value.casefold())
+    # YÖNETİM / Yönetim / yonetim gibi Türkçe karakterli adları aynı biçime getir.
+    folded = unicodedata.normalize("NFKD", value.casefold()).replace("ı", "i")
+    folded = "".join(ch for ch in folded if not unicodedata.combining(ch))
+    return re.sub(r"[^a-z0-9]+", "", folded)
+
+
+def _is_management_category(category: discord.CategoryChannel) -> bool:
+    name = _normalise(category.name)
+    return "yonetim" in name or "management" in name
+
+
+def _category_score(category: discord.CategoryChannel) -> int:
+    # Gerçek/orijinal YÖNETİM kategorisini içindeki bilinen kanallardan ayırt et.
+    child_names = {_normalise(channel.name) for channel in category.channels}
+    hints = len(child_names & MANAGEMENT_HINT_CHANNELS)
+    return hints * 100 + len(category.channels)
 
 
 def _find_management_category(guild: discord.Guild) -> discord.CategoryChannel | None:
-    for category in guild.categories:
-        name = _normalise(category.name)
-        if "yonetim" in name or "management" in name:
-            return category
-    return None
+    matches = [category for category in guild.categories if _is_management_category(category)]
+    if not matches:
+        return None
+
+    # Önce yönetim-sohbeti / başvuru-değerlendirme / yetkili-log içeren gerçek kategori.
+    # Eşitlikte Discord sıralamasında daha yukarıdaki kategori tercih edilir.
+    return max(matches, key=lambda category: (_category_score(category), -category.position))
 
 
 def _overwrites(guild: discord.Guild) -> dict[discord.Role | discord.Member, discord.PermissionOverwrite]:
@@ -60,46 +82,63 @@ def _overwrite_matches(
     return channel.overwrites_for(target).pair() == desired.pair()
 
 
+def _find_existing_log_channel(guild: discord.Guild) -> discord.TextChannel | None:
+    wanted = {_normalise(CHANNEL_NAME), *(_normalise(name) for name in LEGACY_CHANNEL_NAMES)}
+    for channel in guild.text_channels:
+        if _normalise(channel.name) in wanted:
+            return channel
+    return None
+
+
+async def _cleanup_duplicate_management_categories(
+    guild: discord.Guild,
+    primary: discord.CategoryChannel,
+) -> None:
+    # Önceki hatalı sürümün oluşturduğu boş YÖNETİM kopyalarını güvenle temizle.
+    # İçinde başka kanal bulunan kategorilere dokunulmaz.
+    for category in list(guild.categories):
+        if category.id == primary.id or not _is_management_category(category):
+            continue
+        if category.channels:
+            continue
+        try:
+            await category.delete(reason="Arctic: hatalı oluşturulan boş YÖNETİM kopyasını temizle")
+        except (discord.Forbidden, discord.HTTPException):
+            pass
+
+
 async def _ensure_channel(guild: discord.Guild) -> discord.TextChannel | None:
     category = _find_management_category(guild)
-    if category is None:
-        try:
-            category = await guild.create_category(
-                CATEGORY_FALLBACK_NAME,
-                reason="Arctic: ses log yönetim kategorisi",
-            )
-        except (discord.Forbidden, discord.HTTPException):
-            return None
 
-    channel = discord.utils.get(guild.text_channels, name=CHANNEL_NAME)
-    if channel is None:
-        for old_name in LEGACY_CHANNEL_NAMES:
-            channel = discord.utils.get(guild.text_channels, name=old_name)
-            if channel is not None:
-                break
+    # Kritik: mevcut YÖNETİM kategorisi bulunamazsa YENİ kategori oluşturma.
+    # Böylece hiçbir ses olayı sınırsız kategori üretemez.
+    if category is None:
+        return None
+
+    channel = _find_existing_log_channel(guild)
 
     try:
         if channel is None:
-            return await guild.create_text_channel(
+            channel = await guild.create_text_channel(
                 CHANNEL_NAME,
                 category=category,
                 overwrites=_overwrites(guild),
                 topic=TOPIC,
                 reason="Arctic: özel ses-log kanalı",
             )
-
-        changes: dict[str, object] = {}
-        if channel.name != CHANNEL_NAME:
-            changes["name"] = CHANNEL_NAME
-        if channel.category_id != category.id:
-            changes["category"] = category
-        if channel.topic != TOPIC:
-            changes["topic"] = TOPIC
-        if changes:
-            channel = await channel.edit(
-                **changes,
-                reason="Arctic: ses-log kanalını YÖNETİM alanına yerleştir",
-            )
+        else:
+            changes: dict[str, object] = {}
+            if channel.name != CHANNEL_NAME:
+                changes["name"] = CHANNEL_NAME
+            if channel.category_id != category.id:
+                changes["category"] = category
+            if channel.topic != TOPIC:
+                changes["topic"] = TOPIC
+            if changes:
+                channel = await channel.edit(
+                    **changes,
+                    reason="Arctic: ses-log kanalını mevcut YÖNETİM kategorisinde tut",
+                )
 
         # Kanal yalnızca Owner, Moderator ve bot tarafından görülebilir.
         desired = _overwrites(guild)
@@ -123,6 +162,8 @@ async def _ensure_channel(guild: discord.Guild) -> discord.TextChannel | None:
                 reason="Arctic: ses-log gizlilik izinleri",
             )
 
+        # ses-log gerçek kategoriye taşındıktan sonra boş kalan hatalı kopyaları sil.
+        await _cleanup_duplicate_management_categories(guild, category)
         return channel
     except (discord.Forbidden, discord.HTTPException):
         return channel
