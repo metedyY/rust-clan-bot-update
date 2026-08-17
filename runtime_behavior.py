@@ -56,6 +56,7 @@ def _inject_quiet_console(text: str) -> str:
 from pathlib import Path as _ArcticPath
 from member_log import register_member_log as _arctic_register_member_log
 from voice_log import register_voice_log as _arctic_register_voice_log
+from rust_admin import register_rust_admin as _arctic_register_rust_admin
 
 _arctic_status_printed = False
 
@@ -63,6 +64,8 @@ _arctic_status_printed = False
 _arctic_register_member_log(bot)
 # YÖNETİM/ses-log sistemi mevcut bot eventlerini ezmeden ayrı listenerlarla çalışır.
 _arctic_register_voice_log(bot)
+# Rust RCON ban komutlarını ve IP-ban izleyicisini bağla.
+_arctic_register_rust_admin(bot)
 
 
 async def _arctic_status_listener():
