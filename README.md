@@ -5,27 +5,15 @@ Bu depo Arctic Rust Clan Discord botunun `/guncelle` sistemi için otomatik gün
 Güncelleme adresi:
 `https://github.com/metedyY/rust-clan-bot-update/archive/refs/heads/main.zip`
 
-## Son güncelleme — Rust Kalıcı Ban
+## Son güncelleme — Discord Kalıcı Ban
 - Yeni komut: `/ban perma oyuncu_id sebep`.
-- `oyuncu_id` 17 haneli Steam64ID olmalıdır.
+- `oyuncu_id`, banlanacak kişinin **Discord kullanıcı ID'sidir**; Steam/Rust ID değildir.
 - Komutu `👑 Clan Owner`, `🛠️ Moderator`, Discord sunucu sahibi veya Administrator kullanabilir.
-- Rust RCON üzerinden Steam64ID için kalıcı `banid` uygulanır; oyuncu çevrimiçiyse ayrıca anında kicklenir.
-- Oyuncunun IP adresi `playerlist` verisinden veya daha önce tutulan oyuncu/IP önbelleğinden bulunursa `data/ip_bans.json` içine kaydedilir.
-- Aynı IP ile başka Steam hesabı bağlanırsa bot varsayılan olarak 15 saniyelik aralıklarla tespit edip yeni hesabı da kalıcı banlar ve sunucudan atar.
-- IP adresi bulunamasa bile Steam64ID kalıcı banı uygulanır.
-
-### Rust RCON ayarı
-Botun kendi `.env` dosyasına aşağıdaki değerler eklenmelidir:
-
-```env
-RUST_RCON_HOST=127.0.0.1
-RUST_RCON_PORT=28016
-RUST_RCON_PASSWORD=RUST_RCON_SIFREN
-RUST_RCON_SCHEME=ws
-RUST_IP_BAN_CHECK_SECONDS=15
-```
-
-Rust dedicated server tarafında WebRCON açık olmalıdır (`+rcon.web 1`). RCON parolasını GitHub'a yüklemeyin; yalnızca botun yerel `.env` dosyasında tutun.
+- Kullanıcı sunucuda olmasa bile geçerli Discord kullanıcı ID'si ile sunucunun ban listesine eklenebilir.
+- Ban kalıcıdır; yalnızca daha sonra unban uygulanırsa kaldırılır.
+- Botun Discord sunucusunda **Ban Members / Üyeleri Yasakla** yetkisi olmalıdır ve bot rolü hedef kullanıcının rolünün üzerinde bulunmalıdır.
+- Discord bot API'si kullanıcı IP adreslerini botlara vermez; bu nedenle bot tarafından gerçek IP ban uygulanamaz. Bu sistem yalnızca Discord hesap/kullanıcı ID banıdır.
+- Önceki yanlış Rust RCON ban modülü kaldırılmıştır; RCON ayarı gerekmez.
 
 ## Ses Log
 - `ses-log` kanalı mevcut gerçek YÖNETİM kategorisine otomatik eklenir.
@@ -51,4 +39,4 @@ Rust dedicated server tarafında WebRCON açık olmalıdır (`+rcon.web 1`). RCO
 - Eksiksiz üye listesi için Discord Developer Portal > Bot > Privileged Gateway Intents > **Server Members Intent** açık olmalıdır.
 - `All Rounder` kaldırıldı.
 
-`.env`, Discord bot tokenı, RCON parolası ve yerel `data/` durum dosyaları GitHub'a yüklenmez.
+`.env`, Discord bot tokenı ve yerel `data/` durum dosyaları GitHub'a yüklenmez.
