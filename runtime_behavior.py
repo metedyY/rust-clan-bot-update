@@ -8,24 +8,6 @@ EARLY_END = "# ARCTIC_EARLY_LOG_SILENCE_END"
 START_MARKER = "# ARCTIC_QUIET_CONSOLE_START"
 END_MARKER = "# ARCTIC_QUIET_CONSOLE_END"
 
-BASE_DIR = Path(__file__).resolve().parent
-RUST_ADMIN_PATH = BASE_DIR / "rust_admin.py"
-try:
-    _PACKAGED_RUST_ADMIN_SOURCE = RUST_ADMIN_PATH.read_text(encoding="utf-8")
-except OSError:
-    _PACKAGED_RUST_ADMIN_SOURCE = None
-
-
-def _restore_packaged_rust_admin() -> None:
-    # Updater eski yedeği geri yüklerken rust_admin.py dosyasını ezse bile,
-    # bu update paketindeki en yeni modülü tekrar yerine koy.
-    if _PACKAGED_RUST_ADMIN_SOURCE is None:
-        return
-    try:
-        RUST_ADMIN_PATH.write_text(_PACKAGED_RUST_ADMIN_SOURCE, encoding="utf-8")
-    except OSError:
-        pass
-
 
 def _remove_marked_block(text: str, start: str, end: str) -> str:
     pattern = re.compile(
@@ -74,7 +56,7 @@ def _inject_quiet_console(text: str) -> str:
 from pathlib import Path as _ArcticPath
 from member_log import register_member_log as _arctic_register_member_log
 from voice_log import register_voice_log as _arctic_register_voice_log
-from rust_admin import register_rust_admin as _arctic_register_rust_admin
+from discord_ban import register_discord_ban as _arctic_register_discord_ban
 
 _arctic_status_printed = False
 
@@ -82,8 +64,8 @@ _arctic_status_printed = False
 _arctic_register_member_log(bot)
 # YÖNETİM/ses-log sistemi mevcut bot eventlerini ezmeden ayrı listenerlarla çalışır.
 _arctic_register_voice_log(bot)
-# Rust RCON ban komutlarını ve IP-ban izleyicisini bağla.
-_arctic_register_rust_admin(bot)
+# Discord kullanıcı ID'si ile kalıcı sunucu ban komutunu bağla.
+_arctic_register_discord_ban(bot)
 
 
 async def _arctic_status_listener():
@@ -124,8 +106,6 @@ bot.add_listener(_arctic_status_listener, "on_ready")
 
 def apply_runtime_migration(bot_path: Path) -> None:
     """Gerçek bot.py üzerinde açılış davranışını güvenli ve idempotent şekilde düzenler."""
-    _restore_packaged_rust_admin()
-
     if not bot_path.is_file():
         return
 
