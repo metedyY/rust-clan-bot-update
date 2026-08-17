@@ -5,7 +5,14 @@ Bu depo Arctic Rust Clan Discord botunun `/guncelle` sistemi için otomatik gün
 Güncelleme adresi:
 `https://github.com/metedyY/rust-clan-bot-update/archive/refs/heads/main.zip`
 
-## Son güncelleme — Wipe Monitor
+## Son güncelleme — Ses Log
+- `ses-log` kanalı YÖNETİM kategorisine otomatik eklenir.
+- Kanalı yalnızca `👑 Clan Owner` ve `🛠️ Moderator` rolleri görebilir.
+- Tüm ses kanallarındaki girişler, çıkışlar ve kanal değiştirmeler embed olarak kaydedilir.
+- Sistem mevcut bot eventlerini ezmeden `on_voice_state_update` listener'ı olarak çalışır.
+- `/guncelle` sonrasında otomatik olarak aktif olur.
+
+## Wipe Monitor
 - Otomatik Rust wipe takibi eklendi.
 - Canlı takip: Rustafied US/EU Main, Rustopia US/EU Main, Rusty Moose US/EU Main ve Survivors.gg Main.
 - Main sunucularda takvim tahmini yerine Rust sunucusunun canlı query verisindeki yeni dünya başlangıcı (`born`) izlenir.
