@@ -57,6 +57,7 @@ from pathlib import Path as _ArcticPath
 from member_log import register_member_log as _arctic_register_member_log
 from voice_log import register_voice_log as _arctic_register_voice_log
 from discord_ban import register_discord_ban as _arctic_register_discord_ban
+from message_purge import register_message_purge as _arctic_register_message_purge
 
 _arctic_status_printed = False
 
@@ -66,6 +67,8 @@ _arctic_register_member_log(bot)
 _arctic_register_voice_log(bot)
 # Discord kullanıcı ID'si ile kalıcı sunucu ban komutunu bağla.
 _arctic_register_discord_ban(bot)
+# /sil komutunu bağla.
+_arctic_register_message_purge(bot)
 
 
 async def _arctic_status_listener():
